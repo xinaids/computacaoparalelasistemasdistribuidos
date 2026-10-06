@@ -15,6 +15,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <time.h>
 #include <errno.h>
 
 #define SERV_HOST_ADDR "127.0.0.1"
@@ -24,6 +25,17 @@ struct tempo_rede {
     uint32_t sec;
     uint32_t usec;
 };
+
+/* imprime epoch como HH:MM:SS e DD/MM/AAAA (fuso do PC cliente) */
+static void imprime_hora(const char *rotulo, time_t segundos)
+{
+    struct tm *tm = localtime(&segundos);
+    char hora[16], data[16];
+
+    strftime(hora, sizeof(hora), "%H:%M:%S", tm);
+    strftime(data, sizeof(data), "%d/%m/%Y", tm);
+    printf("%s\n%s\n%s\n", rotulo, hora, data);
+}
 
 int main(int argc, char *argv[])
 {
@@ -49,7 +61,7 @@ int main(int argc, char *argv[])
     }
 
     gettimeofday(&tp, NULL);
-    printf("client: local time is %ld\n", (long)tp.tv_sec);
+    imprime_hora("client: local time is", tp.tv_sec);
     t.sec  = htonl((uint32_t)tp.tv_sec);
     t.usec = htonl((uint32_t)tp.tv_usec);
     write(sockid, &t, sizeof(t));
@@ -59,7 +71,7 @@ int main(int argc, char *argv[])
         printf("error reading new socket\n");
         exit(1);
     }
-    printf("client: remote time is %u\n", ntohl(t.sec));
+    imprime_hora("client: remote time is", (time_t)ntohl(t.sec));
 
     close(sockid);
     return 0;
